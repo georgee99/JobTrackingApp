@@ -6,10 +6,3 @@ export interface Job {
     appliedDate: string;
     notes: string;
 }
-export interface JobFormData {
-    company: string;
-    title: string;
-    status: string;
-    appliedDate: string;
-    notes: string;
-}

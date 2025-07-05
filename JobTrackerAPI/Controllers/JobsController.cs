@@ -17,9 +17,38 @@ namespace JobTrackerAPI.Controllers
         public async Task<ActionResult<IEnumerable<Job>>> GetJobs() =>
             await _db.Jobs.ToListAsync();
 
+        [HttpGet("{id}")]
+        public async Task<ActionResult<Job>> GetJob(int id)
+        {
+            if (id <= 0)
+            {
+                Console.WriteLine($"Invalid job ID: {id}");
+                return BadRequest("Invalid job ID.");
+            }
+
+            Console.WriteLine($"Fetching job with ID: {id}");
+            var job = await _db.Jobs.FindAsync(id);
+            if (job == null)
+            {
+                Console.WriteLine($"Job with ID {id} not found.");
+                return NotFound();
+            }
+
+            // Convert back to local time
+            job.AppliedDate = DateTime.SpecifyKind(job.AppliedDate, DateTimeKind.Utc).ToLocalTime();
+
+            return Ok(job);
+        }
+
         [HttpPost]
         public async Task<ActionResult<Job>> CreateJob(Job job)
         {
+            if (job == null)
+            {
+                Console.WriteLine("Received null job object for creation.");
+                return BadRequest("Job data is required.");
+            }
+
             // Storing as UTC
             job.AppliedDate = DateTime.SpecifyKind(job.AppliedDate, DateTimeKind.Utc);
 
@@ -34,17 +63,31 @@ namespace JobTrackerAPI.Controllers
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteJob(int id)
         {
-            Console.WriteLine($"Deleting job with ID: {id}");
-            var job = await _db.Jobs.FindAsync(id);
-            if (job == null)
+            if (id <= 0)
             {
-                Console.WriteLine($"Job with ID {id} not found for deletion.");
-                return NotFound();
+                Console.WriteLine($"Invalid job ID for deletion: {id}");
+                return BadRequest("Invalid job ID.");
             }
 
-            _db.Jobs.Remove(job);
-            await _db.SaveChangesAsync();
-            return NoContent();
+            try
+            {
+                Console.WriteLine($"Deleting job with ID: {id}");
+                var job = await _db.Jobs.FindAsync(id);
+                if (job == null)
+                {
+                    Console.WriteLine($"Job with ID {id} not found for deletion.");
+                    return NotFound();
+                }
+
+                _db.Jobs.Remove(job);
+                await _db.SaveChangesAsync();
+                return NoContent();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error deleting job with ID {id}: {ex.Message}");
+                return StatusCode(500, "An error occurred while deleting the job.");
+            }
         }
 
         [HttpPut("{id}")]

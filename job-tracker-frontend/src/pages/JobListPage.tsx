@@ -13,6 +13,9 @@ export default function JobListPage() {
     const [error, setError] = useState<string | null>(null);
     const [sortOrder, setSortOrder] = useState<"newest" | "oldest">("newest");
 
+    const [currentPage, setCurrentPage] = useState(1);
+    const jobsPerPage = 5;
+
     const handleDelete = async (id: number) => {
         const confirmed = window.confirm("Are you sure you want to delete this job?");
         if (!confirmed) return;
@@ -29,7 +32,9 @@ export default function JobListPage() {
     useEffect(() => {
         fetch(API_URL)
             .then((res) => {
-                if (!res.ok) { throw new Error("Failed to fetch jobs"); }
+                if (!res.ok) {
+                    throw new Error("Failed to fetch jobs");
+                }
                 return res.json();
             })
             .then((data) => {
@@ -49,6 +54,11 @@ export default function JobListPage() {
         return sortOrder === "newest" ? dateB - dateA : dateA - dateB;
     });
 
+    // Pagination
+    const totalPages = Math.ceil(sortedJobs.length / jobsPerPage);
+    const startIndex = (currentPage - 1) * jobsPerPage;
+    const currentJobs = sortedJobs.slice(startIndex, startIndex + jobsPerPage);
+
     return (
         <div className="p-6 max-w-3xl mx-auto">
             <div className="flex items-center justify-between mb-4">
@@ -67,10 +77,32 @@ export default function JobListPage() {
             {error && <p className="text-red-500">{error}</p>}
 
             <div className="space-y-4">
-                {sortedJobs.map((job) => (
+                {currentJobs.map((job) => (
                     <JobCard key={job.id} job={job} onDelete={handleDelete} />
                 ))}
             </div>
+
+            {totalPages > 1 && (
+                <div className="flex justify-center gap-4 mt-6">
+                    <button
+                        onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))}
+                        disabled={currentPage === 1}
+                        className="px-3 py-1 border rounded disabled:opacity-50"
+                    >
+                        Prev
+                    </button>
+                    <span className="self-center">
+                        Page {currentPage} of {totalPages}
+                    </span>
+                    <button
+                        onClick={() => setCurrentPage((p) => Math.min(p + 1, totalPages))}
+                        disabled={currentPage === totalPages}
+                        className="px-3 py-1 border rounded disabled:opacity-50"
+                    >
+                        Next
+                    </button>
+                </div>
+            )}
         </div>
     );
 }
