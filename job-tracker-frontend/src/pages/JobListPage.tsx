@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import type { Job } from "../types/job";
 import JobCard from "../components/JobCard";
+import { useNavigate } from "react-router-dom";
 
 const API_URL =
     import.meta.env.MODE === "production"
@@ -8,6 +9,8 @@ const API_URL =
         : "http://localhost:5112/api/jobs";
 
 export default function JobListPage() {
+    const navigate = useNavigate();
+
     const [jobs, setJobs] = useState<Job[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -20,7 +23,18 @@ export default function JobListPage() {
         const confirmed = window.confirm("Are you sure you want to delete this job?");
         if (!confirmed) return;
 
-        const response = await fetch(`${API_URL}/${id}`, { method: "DELETE" });
+        const token = localStorage.getItem("token");
+        if (!token) {
+            navigate("/login");
+            return;
+        }
+
+        const response = await fetch(`${API_URL}/${id}`, {
+            method: "DELETE",
+            headers: {
+                Authorization: `Bearer ${token}`,
+            },
+        });
 
         if (response.ok) {
             setJobs((prev) => prev.filter((job) => job.id !== id));
@@ -30,23 +44,33 @@ export default function JobListPage() {
     };
 
     useEffect(() => {
-        fetch(API_URL)
-            .then((res) => {
-                if (!res.ok) {
-                    throw new Error("Failed to fetch jobs");
-                }
-                return res.json();
-            })
-            .then((data) => {
-                setJobs(data);
-                setLoading(false);
-            })
-            .catch((err) => {
-                console.error(err);
-                setError("Failed to load jobs");
-                setLoading(false);
-            });
-    }, []);
+        const token = localStorage.getItem("token");
+
+        if (!token) {
+            navigate("/login");
+            return;
+        }
+        fetch(API_URL, {
+            headers: {
+                Authorization: `Bearer ${token}`,
+            }
+        })
+        .then((res) => {
+            if (!res.ok) {
+                throw new Error("Failed to fetch jobs");
+            }
+            return res.json();
+        })
+        .then((data) => {
+            setJobs(data);
+            setLoading(false);
+        })
+        .catch((err) => {
+            console.error(err);
+            setError("Failed to load jobs");
+            setLoading(false);
+        });
+    }, [navigate]);
 
     const sortedJobs = [...jobs].sort((a, b) => {
         const dateA = new Date(a.appliedDate).getTime();

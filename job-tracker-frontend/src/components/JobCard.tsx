@@ -14,7 +14,9 @@ export default function JobCard({ job, onDelete }: JobCardProps) {
       <div className="text-xl font-semibold">{job.title}</div>
       <div className="text-gray-700">{job.company}</div>
       <div className="text-sm text-gray-500">
-        Status: {job.status} · Applied: {new Date(job.appliedDate).toLocaleDateString()}
+        Applied: {new Date(job.appliedDate).toLocaleDateString()}
+        <br />
+        Status: {job.status} 
       </div>
       {job.notes && <p className="mt-2 text-gray-600">{job.notes}</p>}
 

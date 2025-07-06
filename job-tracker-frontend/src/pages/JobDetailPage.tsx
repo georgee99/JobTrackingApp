@@ -8,20 +8,31 @@ const API_URL =
     : "http://localhost:5112/api/jobs";
 
 export default function JobDetailPage() {
-  const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+
+  const { id } = useParams<{ id: string }>();
   const [job, setJob] = useState<Job | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch(`${API_URL}/${id}`)
+    const token = localStorage.getItem("token");
+
+    if (!token) {
+      navigate("/login");
+      return;
+    }
+    fetch(`${API_URL}/${id}`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      }
+    })
       .then((res) => res.json())
       .then((data) => {
         setJob(data);
         setLoading(false);
       })
       .catch(() => setLoading(false));
-  }, [id]);
+  }, [id, navigate]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     if (!job) return;
@@ -32,13 +43,16 @@ export default function JobDetailPage() {
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!job) {
-        console.error("Job data is not available");
-        return; 
+      console.error("Job data is not available");
+      return;
     }
 
     const response = await fetch(`${API_URL}/${id}`, {
       method: "PUT",
-      headers: { "Content-Type": "application/json" },
+      headers: { 
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${localStorage.getItem("token")}`
+      },
       body: JSON.stringify(job),
     });
 
@@ -73,7 +87,6 @@ export default function JobDetailPage() {
           required
         />
         <select name="status" value={job.status} onChange={handleChange} className="w-full p-2 border rounded">
-          <option>Wishlist</option>
           <option>Applied</option>
           <option>Interviewing</option>
           <option>Offer</option>

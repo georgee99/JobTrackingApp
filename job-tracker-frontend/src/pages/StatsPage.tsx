@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import type { Job } from "../types/job";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer} from "recharts";
+import { useNavigate } from "react-router-dom";
 
 const API_URL =
   import.meta.env.MODE === "production"
@@ -9,17 +10,27 @@ const API_URL =
 
 export default function StatsPage() {
   const [jobs, setJobs] = useState<Job[]>([]);
+  const navigate = useNavigate();
+  const now = new Date();
 
   useEffect(() => {
+    const token = localStorage.getItem("token")
+    if (!token) {
+      navigate("/login");
+      return;
+    }
     const fetchJobs = async () => {
-      const res = await fetch(API_URL);
+      const res = await fetch(API_URL, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        }
+      });
       const data = await res.json();
       setJobs(data);
     };
     fetchJobs();
-  }, []);
+  }, [navigate]);
 
-  const now = new Date();
 
   const getStartOfWeek = () => {
     const date = new Date(now);

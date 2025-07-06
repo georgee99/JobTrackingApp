@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using JobTrackerAPI.Data;
 using JobTrackerAPI.Models;
+using Microsoft.AspNetCore.Authorization;
 
 namespace JobTrackerAPI.Controllers
 {
@@ -13,10 +14,12 @@ namespace JobTrackerAPI.Controllers
 
         public JobsController(AppDbContext db) => _db = db;
 
+        [Authorize]
         [HttpGet]
         public async Task<ActionResult<IEnumerable<Job>>> GetJobs() =>
             await _db.Jobs.ToListAsync();
 
+        [Authorize]
         [HttpGet("{id}")]
         public async Task<ActionResult<Job>> GetJob(int id)
         {
@@ -40,6 +43,7 @@ namespace JobTrackerAPI.Controllers
             return Ok(job);
         }
 
+        [Authorize]
         [HttpPost]
         public async Task<ActionResult<Job>> CreateJob(Job job)
         {
@@ -60,6 +64,7 @@ namespace JobTrackerAPI.Controllers
             return CreatedAtAction(nameof(GetJobs), new { id = job.Id }, job);
         }
 
+        [Authorize]
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteJob(int id)
         {
@@ -90,6 +95,7 @@ namespace JobTrackerAPI.Controllers
             }
         }
 
+        [Authorize]
         [HttpPut("{id}")]
         public async Task<IActionResult> UpdateJob(int id, Job updatedJob)
         {
